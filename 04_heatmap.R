@@ -19,7 +19,7 @@ my_col<- colorRampPalette(c("red", "white", "blue"))(256)
 if(TRUE){
   for (c in CLASS)
   {
-ie = X[,1]=="E" ; Y = X[ie,2:64]; Y = data.matrix(Y[1:100,]); my_hm <- heatmap(Y, scale = "row")
+
     ind = X[,1]==c
     Y <- X[ind,2:64]
     Y <- data.matrix(Y)
@@ -30,6 +30,29 @@ ie = X[,1]=="E" ; Y = X[ie,2:64]; Y = data.matrix(Y[1:100,]); my_hm <- heatmap(Y
     #my_heatmap <- heatmap(Y, scale = "none", col=my_col)
     #my_heatmap <- heatmap(Y, scale = "row", col=my_col)
     dev.off()
+
+  }
+}
+#################################################################
+
+
+#discretize values: if -1<x<1, then x=1; if x<=-1, then x=-1; if x>=1, then x=1
+#################################################################
+if(FALSE){
+  for (c in CLASS)
+  {
+
+    ind = X[,1]==c
+    Y1 <- X[ind,2:64]
+    Y1 <- data.matrix(Y1)
+    Y1[Y1 >= 1] <- 1
+    Y1[Y1 <= -1] <- -1
+    Y1[Y1<1 & Y1>-1] <- 0
+
+    png(paste("zheatmap_of_calss_", c, "2.png", sep=""))
+    my_heatmap <- heatmap.2(Y1, scale = "none", col=bluered(100), trace = "none", density.info = "none")
+    dev.off()
+
 
   }
 }
