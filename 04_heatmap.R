@@ -21,12 +21,12 @@ if(TRUE){
   {
 
     ind = X[,1]==c
-    Y <- X[ind,2:64]
+    Y <- X[ind,3:64]  #, row1 is row.names(?), row2 is Gene
     Y <- data.matrix(Y)
     #Y <- data.matrix(Y[1:50,])
 
-    png(paste("heatmap_of_calss_", c, ".png", sep=""))
-    my_heatmap <- heatmap.2(Y, scale = "none", col=bluered(100), trace = "none", density.info = "none")
+    png(paste("heatmap_of_calss_", c, ".png", sep=""), units="in", width=11, height=8.5, res=300)
+    my_heatmap <- heatmap.2(Y, scale = "none", dendrogram = "row", col=bluered(100), trace = "none", density.info = "none")
     #my_heatmap <- heatmap(Y, scale = "none", col=my_col)
     #my_heatmap <- heatmap(Y, scale = "row", col=my_col)
     dev.off()
@@ -38,19 +38,19 @@ if(TRUE){
 
 #discretize values: if -1<x<1, then x=1; if x<=-1, then x=-1; if x>=1, then x=1
 #################################################################
-if(FALSE){
+if(TRUE){
   for (c in CLASS)
   {
 
     ind = X[,1]==c
-    Y1 <- X[ind,2:64]
+    Y1 <- X[ind,3:64]  #, row1 is row.names(?), row2 is Gene
     Y1 <- data.matrix(Y1)
     Y1[Y1 >= 1] <- 1
     Y1[Y1 <= -1] <- -1
     Y1[Y1<1 & Y1>-1] <- 0
 
-    png(paste("zheatmap_of_calss_", c, "2.png", sep=""))
-    my_heatmap <- heatmap.2(Y1, scale = "none", col=bluered(100), trace = "none", density.info = "none")
+    png(paste("discretized_heatmap_of_calss_", c, ".png", sep=""), units="in", width=11, height=8.5, res=300)
+    my_heatmap <- heatmap.2(Y1, scale = "none", dendrogram = "row", col=bluered(100), trace = "none", density.info = "none")
     dev.off()
 
 
