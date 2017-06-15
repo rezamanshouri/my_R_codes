@@ -1,5 +1,5 @@
 
-X <- read.table("boshoff_ready_4_NB", sep=" ", header= TRUE, row.names=NULL)
+X <- read.table("boshoff_ready_4_NB", sep=",", header= TRUE, row.names=NULL)
 
 #discretize all columns except 1st ("row.names") and 2nd ("Functions" or "Gene") columns according to the following
 X[-1] [ X[-1] >= 1] <- 1
@@ -50,7 +50,7 @@ for(i in 2:64) {
 
   IG = e - sum
   IG_list[[paste0(colnames(X)[i], i)]] <- IG
-  cat(IG, "\t", colnames(X)[i], "\n")
+  cat(IG, "\t", i-1, "_", colnames(X)[i], "\n")
 }
 
 

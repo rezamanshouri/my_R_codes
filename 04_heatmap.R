@@ -38,7 +38,7 @@ if(TRUE){
 
 #discretize values: if -1<x<1, then x=1; if x<=-1, then x=-1; if x>=1, then x=1
 #################################################################
-if(TRUE){
+if(FALSE){
   for (c in CLASS)
   {
 
