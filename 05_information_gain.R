@@ -79,7 +79,7 @@ for(i in 2:64) {
   higher <- X[ X[,i] > best_val , ] #all rows whose i's column value is less > best_val
 
   IG_list[[paste0(colnames(X)[i], "_f",i)]] <- best_gain
-  cat(best_gain, "\t", best_val, "\t", nrow(lower), "\t\t", mean(lower[,i]), "\t", nrow(higher), "\t\t", mean(higher[,i]), "\t", i-1, "_", colnames(X)[i],"\n")
+  cat(best_gain, "\t", best_val, "\t", nrow(lower), "\t\t", mean(lower[,i]), "\t", nrow(higher), "\t", mean(higher[,i]), "\t", i-1, "_", colnames(X)[i],"\n")
 }
 
 
