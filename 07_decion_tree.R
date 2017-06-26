@@ -18,6 +18,7 @@ dt<-rpart(Gene ~ ARP4 + Amikacin + Amp + Antimycin + Ascididemin_Nat_prod + BZA 
 dt<-rpart(Gene ~ ., data = boshoff, method="class" , control = rpart.control(minbucket=100, cp=-1))
 dt<-rpart(Gene ~ ., data = boshoff, method="class") #default values
 plot(dt)
+text(dt, use.n=TRUE, cex=0.8)  #annotate the tree
 table(boshoff$Gene)
 #the numbers at each node are the number of instances of each class at that node.
 #Thus, misclassification rate at a node equals (max_number / sum_of_numbers)
@@ -25,7 +26,7 @@ table(boshoff$Gene)
 
 ########################
 #By default, rpart uses "gini impurty" to select splits when performing classification.
-#You can use "information gain" instead by specifying it in the parms parameter
+#You can use "information gain" (called information index in their manual) instead by specifying it in the parms parameter by __parms = list(split = 'information')__
 #It uses exhaustive search over all possible splits in all possible variables
 #There are 2 stopping criteria:
 #1- the number of instances in a node must be higher than "minsplit" so thata a split is attempted
@@ -67,7 +68,7 @@ s <- sample(2551,850) #pick 850 random numbers (i.e. 1/3 of data for test data)
 testData <- boshoff[s,]
 trainData <- boshoff[-s,]
 
-##don't forget to rebuild the tree on trainData
+##rebuild the tree on trainData (don't forget!)
 dt<-rpart(Gene ~ ., data = trainData, method="class", parms = list(split = 'information'), cp = -1 )
 plot(dt)
 printcp(dt)
