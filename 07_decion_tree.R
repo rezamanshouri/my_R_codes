@@ -1,8 +1,7 @@
 
-
-boshoff  <- read.table("Desktop/boshoff_ready_4_NB", sep=",", header= TRUE)
+boshoff  <- read.table("boshoff_ready_4_NB", sep=",", header= TRUE)
 ##shuffle rows
-if(FALSE){
+if(T){
   set.seed(1987)
   g <- runif(nrow(boshoff))
   boshoff <- boshoff[order(g),]
@@ -56,6 +55,11 @@ plotcp(dt)
 #(NOTE: you might get a little different numbes, I guess it is because make a random shuffle of data, but at the end, the cp you get should not be that different)
 
 
+############## over-fitting data ###############
+### note max_depth is 30, and you might not get "the perfect" tree
+t<-rpart(Gene ~ ., data = boshoff, method="class" , control = rpart.control(minbucket = 0, minsplit = 0, cp = -1))
+
+
 ######## prune ########
 #As a rule of thumb, it’s best to prune a decision tree using the cp of smallest tree that is within one standard deviation of the tree with the smallest xerror.
 pt <- prune(dt, cp = 0.003)
@@ -63,7 +67,7 @@ plot(pt)
 text(pt, use.n=TRUE, all=TRUE, cex=0.8)
 
 
-###### Predict Accuracy ######
+################ Predict Accuracy ##################
 s <- sample(2551,850) #pick 850 random numbers (i.e. 1/3 of data for test data)
 testData <- boshoff[s,]
 trainData <- boshoff[-s,]
@@ -85,25 +89,43 @@ table(z)
 mean(z)
 
 
-##### over-fitting data #####
-### note max_depth is 30, and you might not get "the perfect" tree
-t<-rpart(Gene ~ ., data = boshoff, method="class" , control = rpart.control(minbucket = 0, minsplit = 0, cp = -1))
 
-
-######### restrict data to a few classes #######
-#using default values
-t<-rpart(Gene ~ ., data = boshoff, method="class")
-plot(t)
-text(t,use.n=TRUE,all=TRUE,cex=0.8)
-
-boshoff  <- read.table("Desktop/boshoff_ready_4_NB", sep=",", header= TRUE)
-ii = boshoff[,1]=="I"  | boshoff[,1]=="Q" | boshoff[,1]=="E" | boshoff[,1]=="K"
+############### restrict data to a few classes ################
+boshoff  <- read.table("boshoff_ready_4_NB", sep=",", header= TRUE)
+ii = boshoff[,1]=="E"  |  boshoff[,1]=="J" |  boshoff[,1]=="K" |  boshoff[,1]=="I"
 boshoff <- boshoff[ii,]
+#restricting "levels" to only those present in 1st column
+boshoff$Gene = factor(boshoff$Gene)
 
-pred <- predict(t, boshoff, type = 'class') #NOTE: for rpar you need to specify "type = 'class'"
-z <- pred == boshoff[,1]
+#shuffle rows
+set.seed(1987)
+g <- runif(nrow(boshoff))
+boshoff <- boshoff[order(g),]
+
+nrow(boshoff)
+s <- sample(873,290)
+testData <- boshoff[s,]
+trainData <- boshoff[-s,]
+
+##rebuild the tree on trainData (don't forget!)
+dt<-rpart(Gene ~ ., data = trainData, method="class", parms = list(split = 'information'), control = rpart.control(minbucket=5, cp=-1) )
+#dt<-rpart(Gene ~ ., data = trainData, method="class") #using default values
+plot(dt)
+text(dt, use.n=TRUE, all=TRUE, cex=0.8)
+printcp(dt)
+plotcp(dt)
+pt <- prune(dt, cp = 0.03)
+plot(pt)
+text(pt, use.n=TRUE, all=TRUE, cex=0.8)
+
+pred <- predict(pt, testData, type = 'class') #NOTE: for rpar you need to specify "type = 'class'"
+table(testData[,1], pred)
+#(i,i) is the correct predictions of class i, the (i,j) is the number of missclassification where class "i" is (miss)classified as "j"
+z <- pred == testData[,1]
 table(z)
 mean(z)
+
+
 
 ####################################################################################################################
 

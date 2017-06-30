@@ -36,7 +36,7 @@ table(trainData$Gene)
 
 #using 'gini gain' (default) OR 'information gain' as splitting criteria in decision trees
 #actually using __parms = list(split = 'information')__ in rpart make it use 'information index', I assume(!) it does same thing here too
-rf <- randomForest(Gene ~ ., data = trainData, ntree = 1501 ,importance = T, parms = list(split = 'information') )
+rf <- randomForest(Gene ~ ., data = trainData, ntree = 1001 ,importance = T, parms = list(split = 'information') )
 #rf <- randomForest(Gene ~ ., data = trainData, ntrees = 1000, mtry = 8 ,importance = T)
 plot(rf)
 print(rf)
