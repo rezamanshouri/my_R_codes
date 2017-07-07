@@ -5,7 +5,7 @@ table(boshoff$Gene)
 
 
 #################maybe you want to restrict data####################
-ii = boshoff[,1]=="E" | boshoff[,1]=="G"| boshoff[,1]=="J" | boshoff[,1]=="I"
+ii = boshoff[,1]=="E" | boshoff[,1]=="G"| boshoff[,1]=="J"
 X <- boshoff[ii,]
 table(X$Gene)
 
@@ -18,13 +18,13 @@ X$Gene
 
 ##############################################################
 #https://pbil.univ-lyon1.fr/R/pdf/course5.pdf
-library(ade4)
+
 
 B <- X
 B <- boshoff
 
 
-###### bivariate scatter plot ######
+###### histograms ######
 par(mfcol = c(3, 4))
 for (k in 2:5) {
   j0 <- names(B)[k]
@@ -41,6 +41,8 @@ for (k in 2:5) {
 
 
 ###### bivariate scatter plot #######
+library(ade4)
+mycol = c("#e6194b", "#3cb44b", "#ffe119", "#0082c8", "#f58231", "#911eb4", "#46f0f0", "#f032e6", "#d2f53c", "#fabebe", "#008080", "#e6beff", "#aa6e28", "#fffac8", "#800000", "#aaffc3", "#808000", "#ffd8b1", "#000080", "#808080", "#FFFFFF", "#000000")
 par(mar = c(0, 0, 0, 0))
 pan1 <- function(x, y, ...) {
   xy <- cbind.data.frame(x, y)
@@ -79,13 +81,13 @@ scatterplot3d(B$Gene, B$ARP4, B$Amikacin, mar = mar0, color = c("blue",
 
 
 
-########### plot multiple lines with same X axis ##########
+########### plot MSE of NN over time ##########
 ##I used this to compare MSE on training vs validation set in NeuralNet 
 
-nn  <- read.csv("mse_nn/rate_0002/z7", header= TRUE)
-plot(range(nn[,1]), range(c(nn[,2],nn[,3])), type='n')
-lines(nn[,1], nn[,2], type='l', col='green')
-lines(nn[,1], nn[,3], type='l', col='red')
+nn  <- read.csv("mse_nn/dynmaic_rate/z1", header= TRUE)
+plot(range(nn[,1]), range(c(nn[,3],nn[,4])), type='n')
+lines(nn[,1], nn[,3], type='l', col='green')
+lines(nn[,1], nn[,4], type='l', col='red')
 legend(x="topright", lty=c(1,1), c("MSE on training set", "MSE on validation se"), col=c("green","red") )
 
 

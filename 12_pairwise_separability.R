@@ -1,8 +1,6 @@
 library(caret)
 library(MASS)
 
-rm(list = setdiff(ls(), lsf.str()))
-X  <- read.table("boshoff_ready_4_NB", sep=",", header= TRUE)
 
 ############ consider all pairwise classes  ###########
 ## I am wondering if there are some pair of classes that can be weel classified!
@@ -31,7 +29,9 @@ lda_pairwise <- function(X, c1, c2) {
   }
   
   pred <- predict(lda, testData[,2:64])$class
-  mean(pred == testData[,1])
+  a <- mean(pred == testData[,1])
+  
+  round(a,digits=2)
 
 
 }

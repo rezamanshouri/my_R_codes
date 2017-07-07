@@ -71,12 +71,15 @@ f <- " C + D + E + F + G + H + I + J + K + L + M + O + P + Q + T + U + V ~
     methoxatin"
 nn <- neuralnet(f, data = trainData, hidden=20, stepmax=1e6, linear.output=FALSE)
 #for example, 'hidden=c(5,3)' means 2 hidden layers with 5 and 3 neurons in each, respectively.
+# "linear.output=FALSE" says to use activation function
 print(nn)
 plot(nn)
 
 
+
+
 ##### prediction accuracy #####
-nnpred <- compute(nn, testData[,2:64])$net.result
+nnpred <- compute(nn, testData[,2:64])
 #cbind(testData[,1], nnpred)
 
 
@@ -89,11 +92,17 @@ prediction <- c('C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'O', 'P',
 table(prediction, testData$Gene)
 mean(prediction == testData$Gene)
 
-  
 
+########
+nn2 <- neuralnet(f, data = trainData, hidden=c(15,15), stepmax=1e6, linear.output=FALSE)
+plot(nn2)
 
+nnpred2 <- compute(nn2, testData[,2:64])$net.result
 
-
+idx2 <- apply(nnpred2, c(1), maxidx)
+prediction2 <- c('C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'O', 'P', 'Q', 'T', 'U', 'V')[idx2]
+table(prediction2, testData$Gene)
+mean(prediction2 == testData$Gene)
 
 
 
