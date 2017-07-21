@@ -1,4 +1,4 @@
-X  <- read.table("boshoff_ready_4_NB", sep=",", header= TRUE)
+X  <- read.table("boshoff_ready_duplicates_removed.csv", sep=",", header= TRUE)
 
 ###################################################
 ############## SVM from e1071 package #############

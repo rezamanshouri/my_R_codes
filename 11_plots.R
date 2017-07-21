@@ -1,5 +1,5 @@
 
-boshoff  <- read.table("boshoff_ready_4_NB", sep=",", header= TRUE)
+boshoff  <- read.table("Documents/my_R/boshoff_ready_4_NB", sep=",", header= TRUE)
 table(boshoff$Gene)
 #str(boshoff)
 
@@ -84,10 +84,10 @@ scatterplot3d(B$Gene, B$ARP4, B$Amikacin, mar = mar0, color = c("blue",
 ########### plot MSE of NN over time ##########
 ##I used this to compare MSE on training vs validation set in NeuralNet 
 
-nn  <- read.csv("mse_nn/dynmaic_rate/z1", header= TRUE)
-plot(range(nn[,1]), range(c(nn[,3],nn[,4])), type='n')
-lines(nn[,1], nn[,3], type='l', col='green')
-lines(nn[,1], nn[,4], type='l', col='red')
+nn  <- read.csv("Documents/my_R/mse_nn/rate_00001/z1", header= TRUE)
+plot(range(nn[,1]), range(c(nn[,2],nn[,3])), type='n')
+lines(nn[,1], nn[,2], type='l', col='green')
+lines(nn[,1], nn[,3], type='l', col='red')
 legend(x="topright", lty=c(1,1), c("MSE on training set", "MSE on validation se"), col=c("green","red") )
 
 

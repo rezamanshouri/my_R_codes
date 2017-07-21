@@ -1,6 +1,6 @@
 
 ### read data
-boshoff  <- read.table("Desktop/boshoff_ready_4_NB", sep=",", header= TRUE)
+boshoff  <- read.table("boshoff_ready_duplicates_removed.csv", sep=",", header= TRUE)
 table(boshoff$Gene)
 str(boshoff)
 ##shuffle rows
@@ -28,7 +28,8 @@ library(randomForest)
 
 
 ### split data to test and train
-s <- sample(2551,850) #pick 850 random numbers (i.e. 1/3 of data for test data)
+k <- nrow(X)
+s <- sample(k,k/5) #set 20% of data aside for test data
 testData <- boshoff[s,]
 table(testData$Gene)
 trainData <- boshoff[-s,]
@@ -36,12 +37,12 @@ table(trainData$Gene)
 
 #using 'gini gain' (default) OR 'information gain' as splitting criteria in decision trees
 #actually using __parms = list(split = 'information')__ in rpart make it use 'information index', I assume(!) it does same thing here too
-rf <- randomForest(Gene ~ ., data = trainData, ntree = 1001 ,importance = T, parms = list(split = 'information') )
+rf <- randomForest(Gene ~ ., data = trainData, ntree = 5001 , mtry = 8, importance = T, parms = list(split = 'information') )
 #rf <- randomForest(Gene ~ ., data = trainData, ntrees = 1000, mtry = 8 ,importance = T)
 plot(rf)
 print(rf)
 #Dotchart of variable importance as measured by a Random Forest
-varImpPlot(rf)
+#varImpPlot(rf)
 
 
 ### prediction accuracy
@@ -66,10 +67,54 @@ legend("top", colnames(rf$err.rate), col=mycol, cex=0.8, fill=mycol)
 
 
 
+###############################################
+######## Tuning Parameters in caret ###########
+###############################################
+# http://machinelearningmastery.com/tune-machine-learning-algorithms-in-r/
+
+##### partition data to train and test #####
+trainIndex <- createDataPartition(X$Gene, p=.7, list=F)
+trainData <- X[trainIndex, ]
+testData <- X[-trainIndex, ]
+table(testData$Gene)
+table(trainData$Gene)
+
+## if you just want to tune 'mtry'
+set.seed(8)
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+tunegrid <- expand.grid(.mtry=c(5:10))
+rf_gridsearch <- train(Gene~., data=trainData, method="rf", metric="Accuracy", tuneGrid=tunegrid, trControl=control)
+print(rf_gridsearch)
+plot(rf_gridsearch)
+
+preds <- predict(rf_gridsearch, testData[,-1])
+table(testData$Gene, preds)
+mean(testData$Gene == preds)
+
+###############################
+## Howevr, if you want to tune both 'mtry' and 'ntree', you have to create a customRF first: 
+customRF <- list(type = "Classification", library = "randomForest", loop = NULL)
+customRF$parameters <- data.frame(parameter = c("mtry", "ntree"), class = rep("numeric", 2), label = c("mtry", "ntree"))
+customRF$grid <- function(x, y, len = NULL, search = "grid") {}
+customRF$fit <- function(x, y, wts, param, lev, last, weights, classProbs, ...) {
+  randomForest(x, y, mtry = param$mtry, ntree=param$ntree, ...)
+}
+customRF$predict <- function(modelFit, newdata, preProc = NULL, submodels = NULL)
+  predict(modelFit, newdata)
+customRF$prob <- function(modelFit, newdata, preProc = NULL, submodels = NULL)
+  predict(modelFit, newdata, type = "prob")
+customRF$sort <- function(x) x[order(x[,1]),]
+customRF$levels <- function(x) x$classes
 
 
+# train model
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+tunegrid <- expand.grid(.mtry=c(1:4), .ntree=c(10, 100, 500, 1000))
+set.seed(8)
+custom <- train(Gene~., data=trainData, method=customRF, metric="Accuracy", tuneGrid=tunegrid, trControl=control)
+summary(custom)
+plot(custom)
 
-
-
-
+preds <- predict(custom, testData[,-1])
+table(testData$Gene, preds)
 

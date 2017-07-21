@@ -3,10 +3,10 @@ library(MASS)
 
 
 ############ consider all pairwise classes  ###########
-## I am wondering if there are some pair of classes that can be weel classified!
+## build pairwise models and return accuracy using k-fold CV
 
-### lda_pairwise() ###
-lda_pairwise <- function(X, c1, c2) {
+### pairwise_model_accuracy() ###
+pairwise_model_accuracy <- function(X, c1, c2) {
   if(c1 == c2) return(NA)
 
   ii = X[,1]==c1  | X[,1]==c2
@@ -23,7 +23,7 @@ lda_pairwise <- function(X, c1, c2) {
   lda <- lda(Gene ~., trainData)
   
   if(FALSE) {
-    png(paste("lda_pairwise_", c1, "_", c2, ".png", sep=""))
+    png(paste("pairwise_model_accuracy_", c1, "_", c2, ".png", sep=""))
     plot(lda)
     dev.off()
   }
@@ -39,14 +39,27 @@ lda_pairwise <- function(X, c1, c2) {
 
 
 
-X <- read.table("boshoff_ready_4_NB", sep=",", header= TRUE)
+X <- read.table("Documents/my_R/boshoff_ready_duplicates_removed.csv", sep=",", header= TRUE)
+X <- X[ X[,1]!="D" , ]
+X <- X[ X[,1]!="F" , ]
+X <- X[ X[,1]!="U" , ]
+X <- X[ X[,1]!="V" , ]
+table(X$Gene)
+X$Gene <- factor(X$Gene)
+levels(X$Gene)
+
 cl <- c("C", "E", "G", "H", "I", "J", "K", "L", "M", "O", "P", "Q", "T")
-P <- sapply(cl, function(x) sapply(cl, function(y) lda_pairwise(X, x,y) ) )
+P <- sapply(cl, function(x) sapply(cl, function(y) pairwise_model_accuracy(X, x,y) ) )
+# Note, for example, P[1,3] and P[3,1] are exactly same models
+
 
 ## print lowest and highest values in P
 P
 which(P == max(P, na.rm = T) , arr.ind = TRUE)
+max(P, na.rm = T)
 which(P == min(P, na.rm = T) , arr.ind = TRUE)
+min(P, na.rm = T)
+
 mean(P, na.rm = T)
 
 

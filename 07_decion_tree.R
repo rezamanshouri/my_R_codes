@@ -1,5 +1,5 @@
 
-boshoff  <- read.table("boshoff_ready_4_NB", sep=",", header= TRUE)
+X  <- read.table("boshoff_ready_duplicates_removed.csv", sep=",", header= TRUE)
 ##shuffle rows
 if(T){
   set.seed(1987)
@@ -35,11 +35,15 @@ table(boshoff$Gene)
 ########################
 
 
-dt<-rpart(Gene ~ ., data = boshoff, method="class", parms = list(split = 'information'), cp = -1 )
+dt<-rpart(Gene ~ ., data = X, method="class", parms = list(split = 'information'), cp = -1 )
 #dt
 plot(dt)
 text(dt, use.n=TRUE, cex=0.8)  #annotate the tree
 #text(dt, pretty=0)
+
+library(rattle)
+library(rpart.plot)
+fancyRpartPlot(dt)
 
 
 ######## Finding cp for Pruning ########
@@ -53,7 +57,7 @@ plotcp(dt)
 # ...cp of smnallest tree within one standard deviation... => (0.95355 + 0.0078374) = 0.9613874 
 #so we pick cp slightly greater than 0.00292141, that is cp=0.003
 #(NOTE: you might get a little different numbes, I guess it is because make a random shuffle of data, but at the end, the cp you get should not be that different)
-
+#NOTE2: for automated cp selection see "16_my_random_forest.R"
 
 ############## over-fitting data ###############
 ### note max_depth is 30, and you might not get "the perfect" tree
@@ -62,23 +66,22 @@ t<-rpart(Gene ~ ., data = boshoff, method="class" , control = rpart.control(minb
 
 ######## prune ########
 #As a rule of thumb, it’s best to prune a decision tree using the cp of smallest tree that is within one standard deviation of the tree with the smallest xerror.
-pt <- prune(dt, cp = 0.003)
-plot(pt)
-text(pt, use.n=TRUE, all=TRUE, cex=0.8)
-
+pt <- prune(t, cp = 0.003)
+fancyRpartPlot(pt)
 
 ################ Predict Accuracy ##################
-s <- sample(2551,850) #pick 850 random numbers (i.e. 1/3 of data for test data)
+k <- nrow(X)
+s <- sample(k,k/5) #set 20% of data aside for test data
 testData <- boshoff[s,]
 trainData <- boshoff[-s,]
 
 ##rebuild the tree on trainData (don't forget!)
 dt<-rpart(Gene ~ ., data = trainData, method="class", parms = list(split = 'information'), cp = -1 )
-plot(dt)
+fancyRpartPlot(dt)
 printcp(dt)
 plotcp(dt)
 pt <- prune(dt, cp = 0.0037)
-plot(pt)
+fancyRpartPlot(pt)
 text(pt, use.n=TRUE, all=TRUE, cex=0.8)
 
 pred <- predict(pt, testData, type = 'class') #NOTE: for rpar you need to specify "type = 'class'"
@@ -110,7 +113,7 @@ trainData <- boshoff[-s,]
 ##rebuild the tree on trainData (don't forget!)
 dt<-rpart(Gene ~ ., data = trainData, method="class", parms = list(split = 'information'), control = rpart.control(minbucket=5, cp=-1) )
 #dt<-rpart(Gene ~ ., data = trainData, method="class") #using default values
-plot(dt)
+fancyRpartPlot(dt)
 text(dt, use.n=TRUE, all=TRUE, cex=0.8)
 printcp(dt)
 plotcp(dt)

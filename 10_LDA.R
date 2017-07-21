@@ -1,11 +1,11 @@
 rm(list = setdiff(ls(), lsf.str()))
 
-boshoff  <- read.table("boshoff_ready_4_NB", sep=",", header= TRUE)
+boshoff  <- read.table("boshoff_ready_duplicates_removed.csv", sep=",", header= TRUE)
 table(boshoff$Gene)
 #str(boshoff)
 
 #################maybe you want to restrict data####################
-ii = boshoff[,1]=="E"  | boshoff[,1]=="K" | boshoff[,1]=="J" 
+ii = boshoff[,1]=="I"  | boshoff[,1]=="Q"  | boshoff[,1]=="G" 
 X <- boshoff[ii,]
 levels(X$Gene)
 table(X$Gene)
@@ -144,8 +144,7 @@ levels(X$Gene)
 
 
 k <- nrow(X)
-s <- sample(k,k/3)
-s <- sample(455,150) #pick 1/3 of data for test data
+s <- sample(k,k/10) #set 20% of data aside for test data
 testData <- X[s,]
 table(testData$Gene)
 trainData <- X[-s,]
