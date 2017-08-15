@@ -69,7 +69,25 @@ mean.accuracies
 
 
 
+########################################
+######### tune with caret ##############
+########################################
 
+## NOTE : IDK what are "fL" and and "adjust" parameters and what's appropriate range of valuse for them :/
+
+# load the library
+library(caret)
+# load the iris dataset
+data(iris)
+# define training control
+train_control <- trainControl(method="cv", number=10)
+# fix the parameters of the algorithm
+grid <- expand.grid(.fL=c(0,0.5,1), .usekernel=c(FALSE), .adjust=c(1,2,3))
+# train the model
+model <- train(Species~., data=iris, trControl=train_control, method="nb", tuneGrid=grid)
+# summarize results
+print(model)
+plot(model)
 
 
 

@@ -22,6 +22,7 @@ for(i in 2:64) {
 
 
 ##### partition data to train and test #####
+set.seed(123)
 trainIndex <- createDataPartition(X$Gene, p=.7, list=F)
 trainData <- X[trainIndex, ]
 testData <- X[-trainIndex, ]
@@ -149,6 +150,8 @@ mean(preds == original_values)
 # https://stackoverflow.com/questions/7743768/using-nnet-for-prediction-am-i-doing-it-right
 # https://gist.github.com/mick001/5973654a443a79b5d1b911a22c00e487
 
+# nnet uses Broyden–Fletcher–Goldfarb–Shanno (BFGS) algorithm for wight updates
+
 library(nnet)
 library(caret)
 
@@ -179,7 +182,7 @@ f <- as.formula(" C + D + E + F + G + H + I + J + K + L + M + O + P + Q + T + U 
 ## Fit model
 #Grid of tuning parameters to try:
 grid <- expand.grid(.size=seq(5,21,by=2),.decay=c(0,0.001,0.1))
-model <- train(f, train, method='', trace = FALSE, tuneGrid= grid) 
+model <- train(f, train, method='', trace = FALSE, tuneGrid= grid, maxit=1000) 
 ps <- predict(model, te)
 
 ## prediction accuracy

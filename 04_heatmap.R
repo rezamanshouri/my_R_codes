@@ -5,13 +5,17 @@
 library(gplots)
 
 
-X <- read.csv("Documents/my_R/boshoff_ready_duplicates_removed.csv", sep=",",skip=0, row.names=NULL)
+X <- read.csv("Documents/data/new_RNASeg_data/z_replace_gene_with_functions/4_RNASeq_intersection_excluded_R_S_N_A", sep=" ",skip=0, row.names=NULL)
 #X <- X[order(X$Gene),]
 
 CLASS = c("J", "K", "L", "D", "V", "T", "M", "U", "O", "C", "G", "E", "F", "H", "P", "I", "Q")
 
 
 my_col<- colorRampPalette(c("red", "white", "blue"))(256)
+
+
+## normalize
+X[2:229] <- scale(X[,2:229])
 
 
 #simple heatmap
@@ -21,11 +25,11 @@ if(TRUE){
   {
 
     ind = X[,1]==c
-    Y <- X[ind,2:64]
+    Y <- X[ind,2:229]
     Y <- data.matrix(Y)
     #Y <- data.matrix(Y[1:50,])
 
-    png(paste("heatmap_of_calss_", c, ".png", sep=""), units="in", width=13, height=7, res=300)
+    png(paste("./Documents/my_R/z_temp/heatmap_of_calss_", c, ".png", sep=""), units="in", width=13, height=7, res=300)
     my_heatmap <- heatmap.2(Y, scale = "none", Colv=FALSE, dendrogram = "row", trace = "none", col=bluered(100), density.info = "none", margin=c(10, 10))
     # remove 'Colv=FALSE' to group on columns as well
     #my_heatmap <- heatmap(Y, scale = "none", col=my_col)

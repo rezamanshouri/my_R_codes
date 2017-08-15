@@ -1,12 +1,28 @@
 
-### read data
-boshoff  <- read.table("boshoff_ready_duplicates_removed.csv", sep=",", header= TRUE)
+### Tnseq
+X  <- read.csv("Documents/data/tnseq_data/2_resampling_ready_dups_removed", sep="\t", header= TRUE)
+X <- X[,-2] # remove col 2
+X[1:10, 1:15]
+dim(X)
+
+## boshoff
+X  <- read.table("Documents/data/boshoff/new/boshoff_ready_duplicates_removed.csv", sep=",", header= TRUE)
+
 
 library(randomForest)
 library(caret)
 
+
+#### remove all classes with <120 examples
+ii = X[,1]=="C" | X[,1]=="E" | X[,1]=="G" | X[,1]=="H" | X[,1]=="I" | X[,1]=="J" | X[,1]=="K" | X[,1]=="L" | X[,1]=="Q"
+X <- X[ii,]
+X$Gene = factor(X$Gene)
+######################
+
+
 ##### partition data to train and test #####
-trainIndex <- createDataPartition(X$Gene, p=.7, list=F)
+set.seed(123)
+trainIndex <- createDataPartition(X$Gene, p=.8, list=F)
 trainData <- X[trainIndex, ]
 testData <- X[-trainIndex, ]
 table(testData$Gene)
@@ -31,17 +47,17 @@ customRF$levels <- function(x) x$classes
 
 # train model
 control <- trainControl(method="repeatedcv", number=10, repeats=3)
-tunegrid <- expand.grid(.mtry=c(3:22), .ntree=c(100,500,1000,1500))
+tunegrid <- expand.grid(.mtry=c(1,3,5,7,9,11,13,15,17,19), .ntree=c(500,1000))
 set.seed(8)
-custom <- train(Gene~., data=trainData, method=customRF, metric="Accuracy", tuneGrid=tunegrid, trControl=control)
-summary(custom)
+custom2 <- train(Gene~., data=trainData, method=customRF, metric="Accuracy", tuneGrid=tunegrid, trControl=control)
+summary(custom2)
 
-preds <- predict(custom, testData[,-1])
-t <- table(testData$Gene, preds)
+preds2 <- predict(custom2, testData[,-1])
+t2 <- table(testData$Gene, preds2)
 
-print(custom)
+print(custom2)
 cat("\n------------------------------------------\n\n")
-print(confusionMatrix(t))
+print(confusionMatrix(t2))
 cat("\n------------------------------------------\n\n")
 cat("Use plot(custom) to plot grid-search of hyper-paramerts!\n\n")
 

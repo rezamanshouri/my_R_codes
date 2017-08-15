@@ -1,11 +1,11 @@
 
-boshoff  <- read.table("Documents/my_R/boshoff_ready_4_NB", sep=",", header= TRUE)
+X  <- read.table("Documents/my_R/boshoff_ready_duplicates_removed.csv", sep=",", header= TRUE)
 table(boshoff$Gene)
 #str(boshoff)
 
 
 #################maybe you want to restrict data####################
-ii = boshoff[,1]=="E" | boshoff[,1]=="G"| boshoff[,1]=="J"
+ii = boshoff[,1]=="K" | boshoff[,1]=="C"
 X <- boshoff[ii,]
 table(X$Gene)
 
@@ -21,7 +21,6 @@ X$Gene
 
 
 B <- X
-B <- boshoff
 
 
 ###### histograms ######
@@ -51,6 +50,23 @@ pan1 <- function(x, y, ...) {
 }
 pairs(B[, 2:3], panel = pan1)
 pairs(B[,7:10], panel = pan1)
+
+
+pairs(B[,2:5], panel = pan1)
+pairs(B[,6:10], panel = pan1)
+pairs(B[,11:15], panel = pan1)
+pairs(B[,16:20], panel = pan1)
+pairs(B[,21:25], panel = pan1)
+pairs(B[,26:30], panel = pan1)
+pairs(B[,31:35], panel = pan1)
+pairs(B[,36:40], panel = pan1)
+pairs(B[,41:45], panel = pan1)
+pairs(B[,46:50], panel = pan1)
+pairs(B[,51:55], panel = pan1)
+pairs(B[,56:60], panel = pan1)
+pairs(B[,61:64], panel = pan1)
+
+
 
 
 

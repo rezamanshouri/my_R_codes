@@ -1,5 +1,5 @@
 
-boshoff  <- read.table("boshoff_ready_4_NB", sep=",", header= TRUE)
+bb  <- read.table("Documents/my_R/boshoff_ready_duplicates_removed.csv", sep=",", header= TRUE)
 
 
 ####for testing purposes, you might want to restrict data in to a few categories only###
@@ -68,6 +68,16 @@ for(i in 2:n) { #add next functions in order to the plot
 }
 legend(x="topright", legend = funcs, col=mycol[1:n], pch=19)
 #########################################
+
+
+########## Even cooler 3D plots #########
+library(plotly)
+
+## maybe added later :D
+
+#########################################
+
+
 
 
 ####biplot

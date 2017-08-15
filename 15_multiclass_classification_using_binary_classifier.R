@@ -99,11 +99,12 @@ predict_multinomial_from_binary_classifiers <- function(P, testData) {
 
 
 
-k <- nrow(X)
-s <- sample(k,k/5) #set 20% of data aside for test data
-testData <- X[s,]
+##### partition data to train and test #####
+set.seed(123)
+trainIndex <- createDataPartition(X$Gene, p=.7, list=F)
+trainData <- X[trainIndex, ]
+testData <- X[-trainIndex, ]
 table(testData$Gene)
-trainData <- X[-s,]
 table(trainData$Gene)
 
 

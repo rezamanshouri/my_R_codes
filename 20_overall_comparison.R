@@ -23,16 +23,45 @@ for(i in 0:4) {
   print(table(testData$Gene))
   trainData <- X[-(idx:(idx+m)),]
   print(table(trainData$Gene))
+  print(table(testData$Gene) / table(trainData$Gene))
 }
 
 
-### 'abs' and 'square' values
+######## 'abs' and 'square' values ########
 X_abs <- cbind(X[,1], abs(X[,2:64]))
 colnames(X_abs) <- colnames(X)
 X_sqr <- as.data.frame(X[,2:64]^2)
 X_sqr <- cbind(X[,1],X_sqr)
 colnames(X_sqr) <- colnames(X)
 
+
+
+########## PCA as pre-process #############
+pca <- prcomp(X[,2:64], center=TRUE, scale=TRUE)
+plot(pca, type="l")
+summary(pca)
+
+trunc7 <- as.matrix(X[,2:64]) %*% pca$rotation[, 1:7]  #dimension reduction to 3
+dim(trunc_pca7)
+pca7 <- cbind(X[,1], as.data.frame(trunc7))
+colnames(pca7)[1] <- "Gene"
+head (pca7)
+
+trunc20 <- as.matrix(X[,2:64]) %*% pca$rotation[, 1:20]  #dimension reduction to 3
+pca20 <- cbind(X[,1], as.data.frame(trunc20))
+colnames(pca20)[1] <- "Gene"
+head (pca20)
+
+trunc39 <- as.matrix(X[,2:64]) %*% pca$rotation[, 1:39]  #dimension reduction to 3
+pca39 <- cbind(X[,1], as.data.frame(trunc39))
+colnames(pca39)[1] <- "Gene"
+head (pca39)
+#########################################
+
+
+#################################################################
+########################  Let's Start!  #########################
+#################################################################
 
 ############ Naive Bayes ###############
 library(e1071)
@@ -47,14 +76,15 @@ k_folds_nb <- function(k, X) {
     trainData <- X[-(idx:(idx+m)),]
     
     model <- naiveBayes(Gene ~., data=trainData)
-    predictions <- predict(object = model, newdata = testData[,2:64])
+    q <- ncol(X)
+    predictions <- predict(object = model, newdata = testData[,2:q])
     accuracies <- c(accuracies, mean(predictions == testData$Gene))
   }
   accuracies
 }
 #####
 
-acc_nb <- k_folds_nb(5, X_sqr)
+acc_nb <- k_folds_nb(5, pca39)
 acc_nb
 mean.acc_nb <- mean(acc_nb)
 mean.acc_nb
@@ -83,14 +113,15 @@ k_folds_dt <- function(k, X) {
     pt <- prune(dt, cp = best_cp)
 
     model <- pt 
-    predictions <- predict(object = model, newdata = testData[,2:64], type = 'class')
+    q <- ncol(X)
+    predictions <- predict(object = model, newdata = testData[,2:q], type = 'class')
     accuracies <- c(accuracies, mean(predictions == testData$Gene))
   }
   accuracies
 }
 #####
 
-acc_dt <- k_folds_dt(5, X)
+acc_dt <- k_folds_dt(5, pca39)
 acc_dt
 mean.acc_dt <- mean(acc_dt)
 mean.acc_dt
@@ -109,15 +140,16 @@ k_folds_rf <- function(k, X) {
     testData <- X[idx:(idx+m),]
     trainData <- X[-(idx:(idx+m)),]
     
-    model <- randomForest(Gene ~ ., data = trainData, ntree = 1001 , mtry = 15, importance = T, parms = list(split = 'information') )
-    predictions <- predict(object = model, newdata = testData[,2:64])
+    model <- randomForest(Gene ~ ., data = trainData, ntree = 1001 , mtry = 10, importance = T, parms = list(split = 'information') )
+    q <- ncol(X)
+    predictions <- predict(object = model, newdata = testData[,2:q])
     accuracies <- c(accuracies, mean(predictions == testData$Gene))
   }
   accuracies
 }
 #####
 
-acc_rf <- k_folds_rf(5, X)
+acc_rf <- k_folds_rf(5, pca39)
 acc_rf
 mean.acc_rf <- mean(acc_rf)
 mean.acc_rf
@@ -138,14 +170,15 @@ k_folds_lda <- function(k, X) {
     
     model <- lda(Gene ~., trainData)
     #model <- qda(Gene ~., trainData)
-    predictions <- predict(object = model, newdata = testData[,2:64], type = 'class')
+    q <- ncol(X)
+    predictions <- predict(object = model, newdata = testData[,2:q], type = 'class')
     accuracies <- c(accuracies, mean(predictions$class == testData$Gene))
   }
   accuracies
 }
 #####
 
-acc_lda <- k_folds_lda(5, X)
+acc_lda <- k_folds_lda(5, pca39)
 acc_lda
 mean.acc_lda <- mean(acc_lda)
 mean.acc_lda
@@ -199,8 +232,9 @@ make_prediction <- function(RF, testData) {
   n_correct_predictions <- 0
   for(e in 1:nrow(testData)) {
     preds <- c()
+    q <- ncol(testData)
     for(T in RF) {
-      p <- as.character( predict(T, testData[e,2:64], type = 'class') )
+      p <- as.character( predict(T, testData[e,2:q], type = 'class') )
       preds <- append(preds, p)
     }
     
@@ -247,7 +281,31 @@ mean.acc_my_rf
 
 
 
+########### nnet ################
+library(nnet)
+#####
+k_folds_nnet <- function(k, X) {
+  n <- nrow(X)
+  accuracies <- c()
+  m <- floor(n/k) # size of test set
+  for (i in 0:(k-1)) {
+    idx <- i*m  # start index of test set in this fold
+    testData <- X[idx:(idx+m),]
+    trainData <- X[-(idx:(idx+m)),]
+    
+    model <- nnet(Gene ~., trainData, size=9, decay=0.9, maxit=1000)
+    q <- ncol(X)
+    predictions <- predict(object = model, newdata = testData[,2:q], type = 'class')
+    accuracies <- c(accuracies, mean(predictions == testData$Gene))
+  }
+  accuracies
+}
+#####
 
+acc_nnet <- k_folds_nnet(5, pca39)
+acc_nnet
+mean.acc_nnet <- mean(acc_nnet)
+mean.acc_nnet
 
 
 
