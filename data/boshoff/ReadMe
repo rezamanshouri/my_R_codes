@@ -1,0 +1,83 @@
+
+##########################
+get multi-class examples, i.e. examples that belong to more than 2 class
+##########################
+
+## remove those lines with S and R on their 2nd column
+sed  '/.*,R/d' ./1_gene_function_mapping > 2_removed_S
+sed  '/.*,S/d' ./removed_S > 3_removed_SR
+head removed_SR
+
+
+## find frequencies
+<removed_SR cut -d',' -f1 | sort -n | uniq -c
+<removed_SR cut -d',' -f1 | sort -n | uniq -c > 4_all_frequencies
+
+
+## remove leading white spaces
+sed -i "s/^[ \t]*//" all_frequencies | head
+
+
+## only troublemakers, i.e. those with >1 frequencies :))
+grep "^[^1]" all_frequencies > 5_non_uniq_frequencies
+
+grep . -c 5_non_uniq_frequencies
+
+
+
+
+############################
+Which classes come together?
+############################
+
+## suppose I have file, zz.sh, containing below while-loop
+
+while read line ; do
+
+	gene=$(echo $line | cut -d ' ' -f 2)
+	echo -n $gene": "; grep $gene 3_removed_SR | cut -d "," -f 2 | sort | xargs | tr ' ' ,
+
+done <5_non_uniq_frequencies
+
+
+## Then I can do like:
+./zz.sh | cut -d ' ' -f 2 | sort -n | uniq -c
+
+
+## Tip: to execute multiple lines in terminal, i.e. for example pasting above while-loop, just embrace it in a pair of parenthesis!
+
+
+
+
+###########################################################################################################
+remove all duplicates, i.e. in gene-func mapping file, remove lines with their first column being the same
+###########################################################################################################
+
+## when you remove dups with below awk command, you look at rows of "1_gene_function_mapping", and if the first col has been seen already, you exclude it.
+## But there is an issue here, what if we have 2 lines like this "Rv0001 S" and  then "Rv0001 J". In this cas, you keep 1st one and exclude 2nd one. BUT we are NOT interested in "S" and "R"!
+## SOOO it's better to remove "S" and "R" first (we can exlude "N" and "A" here as well):
+cp 1_gene_function_mapping temp
+sed -i '/,R/d' temp
+sed -i '/S/d' temp
+sed -i '/A/d' temp
+sed -i '/N/d' temp
+sed -i 's/,/\t/g' temp
+wc -l temp
+
+
+
+## use "shuf" to get different genes (functions) to be removed/kept each time
+shuf temp > temp2
+awk '!seen[$1]++' temp2 > 1_gene_function_mapping_remove_all_dups
+rm temp temp2
+sort 1_gene_function_mapping_remove_all_dups -o 1_gene_function_mapping_remove_all_dups 
+
+
+sed -i 's/,/ /g' 0_boshoff_expr_clean.csv
+join --nocheck-order 1_gene_function_mapping_remove_all_dups 0_boshoff_expr_clean.csv | cut -f2- -d' ' > boshoff_labeled
+
+## don't forget to ad column names
+
+
+
+sed 's/ /,/g' boshoff_ready.csv

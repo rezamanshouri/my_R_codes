@@ -1,0 +1,75 @@
+
+##########################
+get multi-class examples, i.e. examples that belong to more than 2 class
+##########################
+
+## remove those lines with S and R on their 2nd column
+sed  '/.*,R/d' ./1_gene_function_mapping > 2_removed_S
+sed  '/.*,S/d' ./removed_S > 3_removed_SR
+head removed_SR
+
+
+## find frequencies
+<removed_SR cut -d',' -f1 | sort -n | uniq -c
+<removed_SR cut -d',' -f1 | sort -n | uniq -c > 4_all_frequencies
+
+
+## remove leading white spaces
+sed -i "s/^[ \t]*//" all_frequencies | head
+
+
+## only troublemakers, i.e. those with >1 frequencies :))
+grep "^[^1]" all_frequencies > 5_non_uniq_frequencies
+
+grep . -c 5_non_uniq_frequencies
+
+
+
+
+############################
+Which classes come together?
+############################
+
+## suppose I have file, zz.sh, containing below while-loop
+
+while read line ; do
+
+	gene=$(echo $line | cut -d ' ' -f 2)
+	echo -n $gene": "; grep $gene 3_removed_SR | cut -d "," -f 2 | sort | xargs | tr ' ' ,
+
+done <5_non_uniq_frequencies
+
+
+## Then I can do like:
+./zz.sh | cut -d ' ' -f 2 | sort -n | uniq -c
+
+
+## Tip: to execute multiple lines in terminal, i.e. for example pasting above while-loop, just embrace it in a pair of parenthesis!
+
+
+
+
+###########################################################################################################
+remove all duplicates, i.e. in gene-func mapping file, remove lines with their first column being the same
+###########################################################################################################
+
+sed -i 's/,/ /g' 0_boshoff_expr_clean.csv
+
+sed 's/,/ /g' 1_gene_function_mapping > temp
+awk '!seen[$1]++' temp > 1_gene_function_mapping_remove_all_dups
+rm temp
+
+join --nocheck-order 1_gene_function_mapping_remove_all_dups 0_boshoff_expr_clean.csv | cut -f2- -d' ' > boshoff_labeled
+
+
+grep -v '^R' boshoff_labeled > excluded_R
+grep -v '^S' excluded_R > excluded_R_S
+grep -v '^N' excluded_R_S > excluded_R_S_N
+grep -v '^A' excluded_R_S_N > excluded_R_S_N_A
+rm excluded_R excluded_R_S excluded_R_S_N
+mv excluded_R_S_N_A boshoff_labeled
+grep . -c boshoff_labeled
+
+
+
+sed 's/ /,/g' boshoff_ready.csv

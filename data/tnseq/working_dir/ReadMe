@@ -1,0 +1,43 @@
+
+
+
+
+## Firs of all remove first line of *entropy* files
+## Note we are going to replace 'genes' with their 'functions' only in the essentiality_hit_tables, i.e. gene*condition matrices (not gene*gen matrices)
+## 
+
+
+
+###########################################################################################################
+remove all duplicates, i.e. in gene-func mapping file, remove lines with their first column being the same
+###########################################################################################################
+
+## when you remove dups with below awk command, you look at rows of "1_gene_function_mapping", and if the first col has been seen already, you exclude it.
+## But there is an issue here, what if we have 2 lines like this "Rv0001 S" and  then "Rv0001 J". In this cas, you keep 1st one and exclude 2nd one. BUT we are NOT interested in "S" and "R"!
+## SOOO it's better to remove "S" and "R" first (we can exlude "N" and "A" here as well):
+cp 1_gene_function_mapping temp
+sed -i '/,R/d' temp
+sed -i '/S/d' temp
+sed -i '/A/d' temp
+sed -i '/N/d' temp
+sed -i 's/,/\t/g' temp
+wc -l temp
+wc -l 1_gene_function_mapping_remove_all_dups
+
+
+## use "shuf" to get different genes (functions) to be removed/kept each time
+shuf temp > temp2
+awk '!seen[$1]++' temp2 > 1_gene_function_mapping_remove_all_dups
+rm temp temp2
+sort 1_gene_function_mapping_remove_all_dups -o 1_gene_function_mapping_remove_all_dups 
+wc -l 1_gene_function_mapping_remove_all_dups
+
+
+join --nocheck-order 1_gene_function_mapping_remove_all_dups result_gumbel_hit_table_zbar.dat | cut -f2- -d' ' > 2_gumbel_hit_zbar_ready_no_dups
+
+
+## don't forget to add column names from orig files:
+head -1 result_gumbel_hit_table_zbar.dat
+
+
+sed -i 's/ /	/g' 2_gumbel_hit_zbar_ready_no_dups
