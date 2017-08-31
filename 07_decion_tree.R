@@ -28,7 +28,7 @@ table(boshoff$Gene)
 #You can use "information gain" (called information index in their manual) instead by specifying it in the parms parameter by __parms = list(split = 'information')__
 #It uses exhaustive search over all possible splits in all possible variables
 #There are 2 stopping criteria:
-#1- the number of instances in a node must be higher than "minsplit" so thata a split is attempted
+#1- the number of instances in a node must be higher than "minsplit" so that a a split is attempted
 #2- If the next best split in growing a tree does not reduce the tree’s overall complexity by a certain amount, rpart will terminate the growing process.
 #Complexity measure: a combination of the size of a tree and the ability of the tree to separate the classes
 #choosing "cp" to a negative number allows the tree to be full grown, but we will need to prune it later

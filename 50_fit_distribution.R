@@ -93,31 +93,6 @@ return.level(fit1)
 
 
 
-
-
-########################################
-### calculating Weibull parameters #####
-########################################
-
-
-D <- 5822045
-
-S <- sort(X)
-
-Fr1 <- 0.2
-r1 <- S[2000]
-Fr2 <- 0.6
-r2 <- S[6000]
-
-alpha <- ( log(-D*log(Fr1)) - log(-D*log(Fr2)) ) / (log(r1) - log(r2))
-sigma <- exp( (alpha*log(r1) - log(-D*log(Fr1))) / (alpha) )
-
-alpha
-sigma
-
-
-
-
 ###############################################################
 ###############################################################
 ###############################################################
@@ -125,7 +100,7 @@ sigma
 
 
 library(data.table)
-X <-fread("Documents/protein_interaction/z_random_pairs_rms_500MIL_values")
+X <-fread("../../protein_interaction/z_random_pairs_rms_500MIL_exclude_span_leq9_values")
 X <- as.matrix(X)
 dim(X)
 hist(X, breaks = 1000, xlab = "Min RMS Score", main = "")
@@ -139,28 +114,11 @@ dim(Y)
 hist(Y, breaks = 200, xlab = "Min RMS Score", main = "")
 
 
-## CDF
-plot(ecdf(X))
-
-
-D <- 5822045
-
-alpha <- ( log(-D*log(1-Fr1)) - log(-D*log(1-Fr2)) ) / (log(r1) - log(r2))
-sigma <- exp( (alpha*log(r1) - log(-D*log(1-Fr1))) / (alpha) )
-alpha
-sigma
-
-
 ##############################
 ##############################
 ##############################
 
-Z <- fread("Documents/protein_interaction/z_random_pairs_rms_500MIL_values")
-Z <- as.matrix(Z)
-
-
-idx <- sample(5822045, 100000)
-X <- Z[idx]
+X <- fread("../../protein_interaction/z_random_pairs_rms_500MIL_exclude_span_leq9_values")
 X <- as.matrix(X)
 
 
@@ -171,21 +129,34 @@ hist(Y, breaks = 100)
 plot(ecdf(Y))
 ###########################
 
-D<- 1000
-  
 cdf <- ecdf(X)
-plot(X,(1-cdf(X))^D,ylim=c(0,1),type="l");
+
+D<- 5000000
+## VERY IMPORTANT trick: instead of putting 500mil  numbers at X axis (plot(ecdf(X))), you can do the following:
+r <- seq(0,3,0.001)
+cdf <- ecdf(X)
+plot(r,cdf(r),ylim=c(0,1),type="l");
 par(new=T);
-plot(X,1-cdf(X),ylim=c(0,1),type="l");
+plot(r,(1-cdf(r))^D,ylim=c(0,1),type="l");
 par(new=T);
-plot(X,dweibull(r,shape=alpha,scale=sigma),type="l",col=2);
+plot(r,1-cdf(r),ylim=c(0,1),type="l");
+par(new=T);
+plot(r,dweibull(r,shape=alpha,scale=sigma),type="l",col=2);
 par(new=T);
 hist(Y, breaks = 50,xlim=c(0,2))
 
 
 
-S <- X[order(X)]
+########################################
+### calculating Weibull parameters #####
+########################################
+
+S <- sort(X)
 S <- as.matrix(S)
+
+r <- seq(0,0.4, 0.001)
+#cdf <- ecdf(X)
+plot(r,(1-cdf(r))^D, type = "l")
 
 Fr1 <- 0.3
 r1 <- S[2000]

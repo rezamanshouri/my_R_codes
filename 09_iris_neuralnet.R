@@ -12,6 +12,7 @@ library(caret)
 data(iris)
 
 ## make a 70%/30% train/test partition
+set.seed(123)
 trIdx <- createDataPartition(iris$Species, p=.7, list=F)
 trainset <- iris[trIdx, ]
 testset <- iris[-trIdx, ]
@@ -60,6 +61,8 @@ confusionMatrix(t)
 ##########       nnet             #############
 ###############################################
 ## nnet supports classification which makes our life easy!!!
+# nnet uses Broyden–Fletcher–Goldfarb–Shanno (BFGS) algorithm for wight updates
+
 library(nnet)
 data(iris)
 
@@ -77,6 +80,7 @@ summary(fit)
 predictions <- predict(fit, testset[,1:4], type="class")
 # summarize accuracy
 table(predictions, testset$Species)
+mean(predictions == testset$Species)
 
 ## NOTE:
 ## in neural net, we used 'train/test', but in nnet, we used 'trainset/testset'
