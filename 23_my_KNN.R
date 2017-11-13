@@ -103,6 +103,32 @@ exclude_V_VI_from_gene_func_map <- function(X) {
 
 
 
+##########################################################
+find_all_V_VI_genes <- function(X, gfm) {
+  cc <-c("VI","V")
+  ii <- c()
+  for(i in 1:nrow(X)) {
+    idx <- which(gfm$Gene == as.character(X[i,1]) )
+    if(length(idx) == 1) {
+      if(as.character(gfm$Function[[idx]]) %in% cc) {
+        ii <- c(ii, idx)
+      }
+    }
+  }
+  length(ii)
+  
+  VVI <- X[ii,]
+  dim(VVI)
+  dim(X)
+  
+  VVI
+}
+##########################################################
+
+
+
+
+
 
 
 
@@ -191,8 +217,15 @@ entropy_weighted_modified_tanomoto_score(a, b)
 my.entropy <- function (v) {
   f <- table(v)  # #table of label frequencies
   f = f[ f>0 ] #exclude those with count 0 to avoid undefined behavior in "log"
-  p <- f/sum(f) # now p is the list of priors
-  sum(-p*log(p,length(v)))
+  entropy <- 0
+  if ( length(f)==1 ) {
+    entropy
+  }else {
+    p <- f/sum(f) # now p is the list of priors
+    entropy <- sum(-p*log(p,length(f)))  
+  }
+  
+  entropy  
 }
 ############################################
 
@@ -204,21 +237,22 @@ my.entropy <- function (v) {
 ###########          correlation        #################
 my.cor <- function(a, b) {
   mcor = 0
-  # if a or b are all 0 or 1, i.e. stdev=0, we asseume correlation is zero
-  n <- length(a)
+  # if a or b are all 0 or 1, i.e. stdev=0, we add 2 columns to both: one 1, and one 0. 
   if( sd(a)==0 | sd(b)==0 ) {
-    mcor = 0
+    a <- c(a,1,0)
+    b <- c(b,1,0)
+    mcor <- cor(a,b)
   }else {
-    mcor = cor(t(a), t(b))
+    mcor <- cor(a,b)
   }
   
-  mcor*mcor
+  mcor*mcor # to capture negative cor as well
 }
 
 
 # test
-a <- Ess[Ess$Gene=="Rv3001c",-1]
-b <- Ess[Ess$Gene=="Rv1078",-1]
+a <- as.numeric(X[X$Gene=="Rv3001c",-1])
+b <- as.numeric(X[X$Gene=="Rv1078",-1])
 my.cor(a, b)
 ################################################################
 
@@ -229,19 +263,13 @@ my.cor(a, b)
 ####################################################################
 ###########      entropy weighted correlation      #################
 entropy_weighted_corr_2bit <- function(a, b) {
-  ewcor = 0
-  # if a or b are all 0 or 1, i.e. stdev=0, we asseume correlation is zero
-  n <- length(a)
-  if( sd(a)==0 | sd(b)==0 ) {
-    ewcor <- 0
-  }else {
-    correl <- cor(t(a), t(b))
-    entrp.a <- my.entropy(as.numeric(a))
-    entrp.b <- my.entropy(as.numeric(b))
-    ewcor <- correl*(entrp.a + entrp.b)/2
-  }
+
+  correl <- my.cor(a,b)
+  entrp.a <- my.entropy(as.numeric(a))
+  entrp.b <- my.entropy(as.numeric(b))
+  ewcor <- correl*(entrp.a + entrp.b)/2
   
-  ewcor
+  ewcor*ewcor
 }
 
 
@@ -277,7 +305,7 @@ entropy_weighted_corr_3bit_skip_uncertain <- function(a, b) {
     ewcor <- correl*(entrp.a + entrp.b)/2
   }
   
-  ewcor
+  ewcor*ewcor
 }
 
 
@@ -308,7 +336,7 @@ entropy_weighted_corr_3bit_count_uncertain <- function(a, b) {
     ewcor <- correl*(entrp.a + entrp.b)/2
   }
   
-  ewcor
+  ewcor*ewcor
 }
 
 
@@ -342,9 +370,9 @@ my.knn <- function(Train, Test, k, gfm) {
       #d <- entropy_weighted_corr(Test[i,-1], Train[j,-1])
       #d <- entropy_weighted_corr_2bit(Test[i,-1], Train[j,-1])
       #d <- entropy_weighted_corr_3bit_skip_uncertain(Test[i,-1], Train[j,-1])
-      #d <- entropy_weighted_corr_3bit_count_uncertain(Test[i,-1], Train[j,-1])
+      d <- entropy_weighted_corr_3bit_count_uncertain(Test[i,-1], Train[j,-1])
       #d <- my.cor(Test[i,-1], Train[j,-1])
-      d <- entropy_weighted_modified_tanomoto_score(Test[i,-1], Train[j,-1])
+      #d <- entropy_weighted_modified_tanomoto_score(Test[i,-1], Train[j,-1])
       distances[as.character(Train[j,1])] = d
     }
     
@@ -379,7 +407,14 @@ my.knn <- function(Train, Test, k, gfm) {
     
     
     # determine prediction: if there are ties, pick one at random
-    pred <- sample(all_maxs, 1)
+    pred <- ""
+    cat("Prediction: ")
+    if( length(all_maxs)==1 ) {
+      pred <- all_maxs
+    }else {
+      pred <- "uncertain"
+    }
+    cat(pred, "\n")
     all.preds <- c(all.preds, pred)
     
     
@@ -435,10 +470,10 @@ my.knn.leave1out <- function(Train, k, gfm) {
       #d <- entropy_weighted_corr(Train[i,-1], Train[j,-1])
       #d <- entropy_weighted_corr_2bit(Train[i,-1], Train[j,-1])
       #d <- entropy_weighted_corr_3bit_skip_uncertain(Train[i,-1], Train[j,-1])
-      #d <- entropy_weighted_corr_3bit_count_uncertain(Train[i,-1], Train[j,-1])
+      d <- entropy_weighted_corr_3bit_count_uncertain(Train[i,-1], Train[j,-1])
       #d <- my.cor(Train[i,-1], Train[j,-1])
       #d <- entropy_weighted_modified_tanomoto_score(Train[i,-1], Train[j,-1])
-      d <- length(which(Train[i,-1] == Train[j,-1])) #bits in common
+      #d <- length(which(Train[i,-1] == Train[j,-1])) #bits in common
       distances[as.character(Train[j,1])] = d
     }
     
@@ -474,11 +509,13 @@ my.knn.leave1out <- function(Train, k, gfm) {
     
     # determine prediction: if there are ties, pick one at random
     pred <- ""
+    cat("Prediction: ")
     if( length(all_maxs)==1 ) {
       pred <- all_maxs
     }else {
       pred <- "uncertain"
     }
+    cat(pred, "\n")
     all.preds <- c(all.preds, pred)
     
     
@@ -526,6 +563,23 @@ find_actual_functions <- function(X, gfm) {
 
 
 
+#####################################
+### remove highly correlated cols ###
+#####################################
+tmp <- cor(Ess[,-1])
+tmp[upper.tri(tmp)] <- 0 #upper triagnle
+diag(tmp) <- 0 # diagonal
+
+XX <- Ess[,-1]
+XX <- XX[,!apply(tmp,2,function(x) any(x > 0.9))]
+XX <- cbind(Ess[,1], XX)
+dim(XX)
+colnames(XX)[1] <- "Gene"
+XX[1:10,1:14]
+Ess[1:10,1:14]
+setdiff(colnames(Ess), colnames(XX))
+#####################################
+
 
 
 
@@ -538,34 +592,31 @@ new_gene_func_map <- exclude_S_R_from_gene_func_map(gene_func_map)
 E <- exclude_V_VI(Ess, gene_func_map)  # if Sanger categories used
 new_gene_func_map <- exclude_V_VI_from_gene_func_map(gene_func_map)
 
-dim(E)
-dim(Ess)
-dim(gene_func_map)
-
+### my.knn(Train,Test)
 n <- nrow(E)
 idx <- sample(n, n/5)
 Test <- E[idx,]
 Train <- E[-idx,]
-dim(Train)
-dim(Test)
-
-
 preds <- my.knn(Train, Test, 7, new_gene_func_map)
 
 
 
-
-
-
-dim(E)
-EE <- remove_entr_leq_.2(E)
-
-dim(EE)
-
-
-preds <- my.knn.leave1out(EE, 10, new_gene_func_map)
+## my.knn.leave1out(Train)
+EE <- remove_entr_leq(E, 0.02)
 preds <- my.knn.leave1out(E, 7, new_gene_func_map)
 
+
+
+# my.knn(Train, Test, k, gfm)
+Test <- find_all_V_VI_genes(Ess, gene_func_map) # unknown genes
+preds <- my.knn(E, Test, 7, gene_func_map)
+
+
+
+
+
+
+## prediction accuracy
 actual_funcs <- find_actual_functions(EE,new_gene_func_map)
 tbl <- table(actual_funcs, preds)
 mean(actual_funcs == preds)
@@ -608,7 +659,7 @@ new_gene_func_map <- exclude_V_VI_from_gene_func_map(gene_func_map)
 dim(E)
 E <- remove_stdev_0_rows(E)
 dim(E)
-E <- remove_entr_leq_.2(E)
+E <- remove_entr_leq(E, 0.2)
 dim(E)
 
 
@@ -642,17 +693,18 @@ remove_stdev_0_rows <- function(X) {
 #########################################
 ## Remove rows with entropy < 0.2
 ## 1st row is gene name, and the rest are values
-remove_entr_leq_.2 <- function(X) {
+remove_entr_leq <- function(X, threshold) {
   remove_idx <- c()
   for(i in 1:nrow(X)) {
     entr <- my.entropy(as.numeric(X[i,-1]))
-    if( entr < 0.02) {
+    if( entr < threshold) {
       remove_idx <- c(remove_idx, i)
     }
   }
   X[-remove_idx,]
 }
 #########################################
+
 
 
 

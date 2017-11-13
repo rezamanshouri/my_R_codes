@@ -114,35 +114,6 @@ mean(z)
 
 
 ####################################
-######### Random Forest  ###########
-####################################
-library(randomForest)
-library(caret)
-
-set.seed(123)
-Y <- X
-trainIndex <- createDataPartition(Y$Gene, p=.8, list=F)
-trainData <- Y[trainIndex, ]
-testData <- Y[-trainIndex, ]
-table(testData$Gene)
-table(trainData$Gene)
-
-rf <- randomForest(Gene ~ ., data = trainData, ntree = 501 , mtry = 5, importance = T, parms = list(split = 'information') )
-print(rf)
-
-### prediction accuracy
-pred <- predict(rf, testData, type = 'class') #NOTE: for rpar you need to specify "type = 'class'"
-table(testData[,1], pred)
-z <- pred == testData[,1]
-table(z)
-mean(z)
-
-
-
-
-
-
-####################################
 ######### Lets try NB  #############
 ####################################
 
@@ -162,6 +133,37 @@ mean(pred == testData1$Gene)
 
 
 
+####################################
+######### Random Forest  ###########
+####################################
+library(randomForest)
+library(caret)
+
+set.seed(123)
+Y <- XX[,-c(1,3)]
+trainIndex <- createDataPartition(Y$Function, p=.8, list=F)
+trainData <- Y[trainIndex, ]
+testData <- Y[-trainIndex, ]
+table(testData$Function)
+table(trainData$Function)
+
+rf <- randomForest(Function ~ ., data = trainData, ntree = 501 , mtry = 5, importance = T, parms = list(split = 'information') )
+print(rf)
+
+### prediction accuracy
+pred <- predict(rf, testData, type = 'class') #NOTE: for rpar you need to specify "type = 'class'"
+table(testData[,1], pred)
+z <- pred == testData[,1]
+table(z)
+mean(z)
+
+
+
+
+
+
+
+
 
 
 
@@ -171,36 +173,61 @@ mean(pred == testData1$Gene)
 ########## visualization ###########
 ####################################
 
-X <- read.table("Documents/data/tnseq_data/working_dir/sanger_categories/2_gumbel_hit_3bit_sanger_ready_no_dups", sep=",", skip=0, header= TRUE, row.names=NULL)
-X <- X[,-2]
+library(gplots)
+
+Z <- read.table("../data/tnseq_data/resampling/2_pval_sanger_ready", sep=" ", skip=0, header= TRUE, row.names=NULL)
+X <- Z[,-c(1,3)]
 dim(X)
 
-## remove I.E and IV.K  with <3 examples
-X <- X[-which(X$Gene=="I.E"),]
-X <- X[-which(X$Gene=="IV.K"),]
-X$Gene <- factor(X$Gene)
+
+## remove all rows with same value on all conditions
+remove_idx <- c()
+for( c in CLASS ) {
+  if( length(which(X$Function==c)) < 10 ) {
+    remove_idx <- c(remove_idx, which(X$Function==c))
+  }
+}
+X <- X[-remove_idx, ]
+dim(X)
+X$Function <- factor(X$Function)
+table(X$Function)
 
 
-library(gplots)
+
+## remove all rows with same value on all conditions
+remove_idx <- c()
+for(i in 1:nrow(X) ) {
+  if( sd(X[i,-c(1:3)])==0 ) {
+    remove_idx <- c(remove_idx, i)
+  }
+}
+length(remove_idx)
+dim(X)
+X <- X[-remove_idx, ]
+dim(X)
+
+
+
 CLASS = c("J", "K", "L", "D", "V", "T", "M", "U", "O", "C", "G", "E", "F", "H", "P", "I", "Q")
 
-CLASS = c("I.A", "I.B", "I.C","I.D",#"I.E",
+CLASS = c("I.A", "I.B", "I.C","I.D","I.E",
           "I.F", "I.G","I.H","I.I","II.A","II.B","II.C","III.A", "III.B", "III.C", "III.D",
-           "III.E", "III.F", "I.J", "IV.A", "IV.B", "IV.C","IV.D","IV.E","IV.F", "IV.G","IV.H","IV.I","IV.J","IV.K", "V"
-          #,"VI"
-          )
+           "III.E", "III.F", "I.J", "IV.A", "IV.B", "IV.C","IV.D","IV.E","IV.F", "IV.G","IV.H","IV.I","IV.J","IV.K")
 
 
 
 for (c in CLASS){
   
-  ind = X[,1]==c
+  ind = which(X$Function==c)
+  if( length(ind) < 5 ){
+    next
+  }
   Y <- X[ind,-1]
   Y <- data.matrix(Y)
   #Y <- data.matrix(Y[1:50,])
   
-  png(paste("Documents/my_R/z/heatmap_of_calss_", c, ".png", sep=""), units="in", width=13, height=7, res=300)
-  my_heatmap <- heatmap.2(Y, scale = "none", Colv=FALSE, dendrogram = "row", trace = "none", col=bluered(100), density.info = "none", margin=c(10, 10))
+  png(paste("z/heatmap_of_calss_", c, ".png", sep=""), units="in", width=13, height=7, res=300)
+  my_heatmap <- heatmap.2(Y, scale = "none", Colv=FALSE, dendrogram = "row",labRow = Z[ind,1] ,trace = "none", col=bluered(100), density.info = "none", margin=c(10, 10))
   # remove 'Colv=FALSE' to group on columns as well
   #my_heatmap <- heatmap(Y, scale = "none", col=my_col)
   #my_heatmap <- heatmap(Y, scale = "row", col=my_col)
@@ -212,8 +239,20 @@ for (c in CLASS){
 
 
 
+#####################################
+### remove highly correlated cols ###
+#####################################
 
 
+tmp <- cor(X[,-c(1:3)])
+tmp[upper.tri(tmp)] <- 0 #upper triagnle
+diag(tmp) <- 0 # diagonal
+
+XX <- X[,-c(1:3)]
+XX <- XX[,!apply(tmp,2,function(x) any(x > 0.9))]
+XX <- cbind(X[,c(1:3)], XX)
+dim(XX)
+XX[1:10,1:14]
 
 
 

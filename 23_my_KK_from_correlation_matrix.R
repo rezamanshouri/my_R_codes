@@ -7,10 +7,11 @@
 ################ Reading Files  ##################
 ##################################################
 ## read gene function mapping file
-gene_func_map <- read.table("Documents/data/tnseq_data/working_dir/1_gene_function_mapping", sep = ",", header = T)
+gene_func_map <- read.table("../data/tnseq_data/working_dir/1_gene_function_mapping", sep = ",", header = T)
+gene_func_map <- read.table("../data/tnseq_data/original_files/new/H37Rv_sanger_level_2.txt", sep = "\t", header = T)
 
 ## read gene*gene distance matrix
-X<- read.csv("Documents/data/tnseq_data/original_files/new/result_gumbel_entropy_weighted_correlation_08_25_2017.dat", sep = "\t", header = T)
+X<- read.csv("../data/tnseq_data/original_files/new/result_gumbel_entropy_weighted_correlation_08_25_2017.dat", sep = "\t", header = T)
 
 gene_names <- X[,c(1,2)]
 
@@ -22,6 +23,26 @@ names(X)[1] <- "Gene"
 Dist.matrix <- X
 
 ##################################################
+
+
+
+## Shannon Entropy
+############################################
+## v is of type "numeric" of occurrances: e.g. v <- c(1,2,1,3,1,2,3,1,2)
+my.entropy <- function (v) {
+  f <- table(v)  # #table of label frequencies
+  f = f[ f>0 ] #exclude those with count 0 to avoid undefined behavior in "log"
+  entropy <- 0
+  if ( length(f)==1 ) {
+    entropy
+  }else {
+    p <- f/sum(f) # now p is the list of priors
+    entropy <- sum(-p*log(p,length(f)))  
+  }
+  
+  entropy  
+}
+############################################
 
 
 
@@ -51,7 +72,8 @@ knn_prediction_given_dist_matrix <- function(Dist.matrix, Test.idx, k, exclude_T
   all.preds <- c()
   num_correct_pred = 0
   for(gene in Test.genes) {
-    cat("Query: ",gene, as.character(gene_names[gene_names[,1]==gene,2]), "\n")
+    iii <- which(h.table[,1]==gene)
+    cat("Query: ",gene, as.character(gene_names[gene_names[,1]==gene,2]), ", entropy: ", my.entropy(as.numeric(h.table[iii,-c(1,2)])),"\n")
     # simply find the row corresponding to gene in E
     idx <- which(Dist.matrix$Gene == gene)
     row <- Dist.matrix[idx,]
@@ -69,7 +91,7 @@ knn_prediction_given_dist_matrix <- function(Dist.matrix, Test.idx, k, exclude_T
     cat("\n")
     
     
-    cat("\t")
+    # cat("\t")
     # find all functions corresponding to top_k genes
     all_funcs <- c()
     for( g in top_k ) {
@@ -103,13 +125,20 @@ knn_prediction_given_dist_matrix <- function(Dist.matrix, Test.idx, k, exclude_T
     
     
     cmmn <- intersect(all_maxs,actual_funcs)
-    if(length(cmmn) > 0){
-      num_correct_pred = num_correct_pred + 1;
-      cat("--------------------\n")
+    if(length(cmmn) >2){   # correct pred if 1- appears among majority funcs
+      for(ff in cmmn) {
+        if(tbl[ff]>2) {  # 2- the majority count is at least 2 (Note this condition works only for sanger where func of each gene is unique)
+          num_correct_pred = num_correct_pred + 1;
+          cat("#of matches: ", tbl[actual_funcs], "\n")
+          cat("+++++++++++++++++++++++\n")
+          all.preds <- c(all.preds, ff)
+          break
+        }
+      }  
     }
   }
   
-  cat("Accuracy is: ", (num_correct_pred/length(Test.genes))*100, " %\n")
+   cat("Accuracy is: ", num_correct_pred, "/", length(Test.genes), "= ",(num_correct_pred/length(Test.genes))*100, " %\n")
   all.preds
 }
 ###################################
@@ -139,6 +168,31 @@ dim(Dist.matrix_excld_RSAN)
 dim(Dist.matrix)
 ###################################################################
 
+#######################################################
+## for Sanger ## categories
+excld <-c("VI","V")
+remove_idx <- c()
+for(i in 1:nrow(Dist.matrix)) {
+  # find function(s) of this gene and if it is ONLY {S or R or A or N} add idx to remove_idx
+  idx <- which(gene_func_map$Gene == as.character(X[i,1]))
+  if(length(idx) == 1) {
+    if(as.character(gene_func_map$Function[[idx]]) %in% excld) {
+      remove_idx <- c(remove_idx, i)
+    }
+  }
+}
+length(remove_idx)
+
+Dist.matrix_excld_VVI <- Dist.matrix[-remove_idx,]
+# exclude the same genes from columns (Note gene at row i appears at col i+1)
+remove_idx_col <- remove_idx +1
+Dist.matrix_excld_VVI <- Dist.matrix_excld_VVI[,-remove_idx_col]
+dim(Dist.matrix_excld_VVI)
+dim(Dist.matrix)
+#######################################################
+
+
+
 
 
 
@@ -146,35 +200,62 @@ dim(Dist.matrix)
 ##### Lets Test Them #####
 ##########################
 
-n <- nrow(Dist.matrix_excld_RSAN)
-set.seed(246)
-idx <- sample(n, n/5)
-
 exclude_Test <- FALSE
-preds <- knn_prediction_given_dist_matrix(Dist.matrix_excld_RSAN, idx, 1, exclude_Test)
+idx <- c(1:nrow(Dist.matrix_excld_RSAN))
+
+preds <- knn_prediction_given_dist_matrix(Dist.matrix_excld_RSAN, idx, 7, exclude_Test)
 
 
 
 
+#####################################
+#####################################
+
+###################################
+find_idx_of_non_zero_sd <- function(hit_table, cor_table) {
+  ii <- c()
+  for(i in 1:nrow(cor_table)) {
+    idx <- which(hit_table[,1] == as.character(cor_table[i,1]) )
+    if( sd(hit_table[idx,-c(1,2)]) != 0 ) {
+      ii <- c(ii, i)
+    }
+  }
+  
+  ii
+}
+###################################
+
+h.table<- read.csv("../data/tnseq_data/original_files/new/result_gumbel_hit_table_binary_08_25_2017.dat", sep = "\t", header = T)
+idx <- find_idx_of_non_zero_sd(h.table, Dist.matrix_excld_VVI)
+exclude_Test <- FALSE
+
+
+preds <- knn_prediction_given_dist_matrix(Dist.matrix_excld_VVI, idx, 11, exclude_Test)
+table(preds)
+actual_classes <- c()
+for(i in idx) {
+  ii <- which(gene_func_map[,1] == as.character(Dist.matrix_excld_VVI[i,1]))
+  actual_classes <- c(actual_classes, as.character(gene_func_map[ii,2]))
+}
+table(actual_classes)
 
 
 
+#################################
+## exclude from Test and Train
+################################
+idx_col <- idx + 1
+EE <- Dist.matrix_excld_VVI[idx,c(1,idx_col)]
+dim(EE)
+iix <- c(1:nrow(EE))
 
-
-
-
-
-v <- c(1,2,3)
-f <- table(v)  # #table of label frequencies
-f = f[ f>0 ] #exclude those with count 0 to avoid undefined behavior in "log"
-p <- f/sum(f) # now p is the list of priors
-sum(-p*log(p,3))
-
-
-
-
-
-
-
-
-
+preds <- knn_prediction_given_dist_matrix(EE, iix, 11, exclude_Test)
+table(preds)
+actual_classes <- c()
+for(i in iix) {
+  ii <- which(gene_func_map[,1] == as.character(EE[i,1]))
+  actual_classes <- c(actual_classes, as.character(gene_func_map[ii,2]))
+}
+table(actual_classes)
+length(preds)
+length(actual_classes)
